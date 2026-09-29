@@ -18,7 +18,7 @@ async function submit() {
   if (!form.name.trim() || !form.assetTypeId) { error.value = 'Name and asset type are required.'; return }
   busy.value = true; error.value = null
   const fields = { name: form.name.trim(), assetTypeId: form.assetTypeId, status: form.status, locationId: form.locationId || null, hostname: form.hostname.trim(), ipAddress: form.ipAddress.trim(), manufacturer: form.manufacturer.trim(), model: form.model.trim(), serialNumber: form.serialNumber.trim(), notes: form.notes.trim() }
-  const input: CreateAsset | UpdateAsset = props.asset ? { ...fields, hostname: fields.hostname || null, ipAddress: fields.ipAddress || null, manufacturer: fields.manufacturer || null, model: fields.model || null, serialNumber: fields.serialNumber || null, notes: fields.notes || null } : fields
+  const input: CreateAsset | UpdateAsset = props.asset ? { ...fields, hostname: fields.hostname || null, ipAddress: fields.ipAddress || null, manufacturer: fields.manufacturer || null, model: fields.model || null, serialNumber: fields.serialNumber || null, notes: fields.notes || null } : { ...fields, hostname: fields.hostname || undefined, ipAddress: fields.ipAddress || undefined, manufacturer: fields.manufacturer || undefined, model: fields.model || undefined, serialNumber: fields.serialNumber || undefined, notes: fields.notes || undefined }
   try { await props.onSave(input) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Could not save asset.' } finally { busy.value = false }
 }
 </script>

@@ -21,7 +21,7 @@ export default function AssetForm({ asset, types, locations = [], onSave, onCanc
     const fields = { name: name.trim(), assetTypeId, status, locationId: locationId || null, hostname: hostname.trim(), ipAddress: ipAddress.trim(), manufacturer: manufacturer.trim(), model: model.trim(), serialNumber: serialNumber.trim(), notes: notes.trim() }
     const input: CreateAsset | UpdateAsset = asset
       ? { ...fields, hostname: fields.hostname || null, ipAddress: fields.ipAddress || null, manufacturer: fields.manufacturer || null, model: fields.model || null, serialNumber: fields.serialNumber || null, notes: fields.notes || null }
-      : fields
+      : { ...fields, hostname: fields.hostname || undefined, ipAddress: fields.ipAddress || undefined, manufacturer: fields.manufacturer || undefined, model: fields.model || undefined, serialNumber: fields.serialNumber || undefined, notes: fields.notes || undefined }
     setBusy(true); setError(null)
     try { await onSave(input) } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not save asset.') } finally { setBusy(false) }
   }
