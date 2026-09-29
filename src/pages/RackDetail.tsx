@@ -1,0 +1,46 @@
+import { useEffect, useState, type FormEvent } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { confirmDelete, ErrorNotice, Field, Loading, optional } from '../components/ui'
+import { api } from '../services/api'
+import type { Asset, Location, PlacementFields, RackDetail as RackDetailModel, RackFields, RackOrientation, RackPlacement } from '../types/api'
+
+export default function RackDetail() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const [rack, setRack] = useState<RackDetailModel | null>(null)
+  const [assets, setAssets] = useState<Asset[]>([])
+  const [locations, setLocations] = useState<Location[]>([])
+  const [view, setView] = useState<RackOrientation>('front')
+  const [editingRack, setEditingRack] = useState(false)
+  const [editingPlacement, setEditingPlacement] = useState<RackPlacement | 'new' | null>(null)
+  const [name, setName] = useState('')
+  const [totalUnits, setTotalUnits] = useState(42)
+  const [startingUnit, setStartingUnit] = useState(1)
+  const [locationId, setLocationId] = useState('')
+  const [description, setDescription] = useState('')
+  const [notes, setNotes] = useState('')
+  const [assetId, setAssetId] = useState('')
+  const [startUnit, setStartUnit] = useState(1)
+  const [heightUnits, setHeightUnits] = useState(1)
+  const [orientation, setOrientation] = useState<RackOrientation>('front')
+  const [placementNotes, setPlacementNotes] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  useEffect(() => { let active = true; void Promise.all([api.racks.get(id!), api.assets.list(), api.locations.list()]).then(([row, machines, places]) => { if (active) { setRack(row); setAssets(machines); setLocations(places) } }).catch(cause => { if (active) setError(cause.message) }).finally(() => { if (active) setLoading(false) }); return () => { active = false } }, [id])
+  function openRack() { if (!rack) return; setName(rack.name); setTotalUnits(rack.totalUnits); setStartingUnit(rack.startingUnit); setLocationId(rack.locationId || ''); setDescription(rack.description || ''); setNotes(rack.notes || ''); setEditingRack(true) }
+  function openPlacement(placement: RackPlacement | 'new') { if (!rack) return; setEditingPlacement(placement); setAssetId(placement === 'new' ? assets[0]?.id || '' : placement.assetId); setStartUnit(placement === 'new' ? rack.startingUnit : placement.startUnit); setHeightUnits(placement === 'new' ? 1 : placement.heightUnits); setOrientation(placement === 'new' ? view : placement.orientation); setPlacementNotes(placement === 'new' ? '' : placement.notes || '') }
+  async function saveRack(event: FormEvent) { event.preventDefault(); setBusy(true); setError(null); try { const input: RackFields = { name: name.trim(), totalUnits, startingUnit, locationId: locationId || null, description: optional(description), notes: optional(notes) }; await api.racks.update(id!, input); setRack(await api.racks.get(id!)); setEditingRack(false) } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not update rack.') } finally { setBusy(false) } }
+  async function savePlacement(event: FormEvent) { event.preventDefault(); setBusy(true); setError(null); try { const input: PlacementFields = { assetId, startUnit, heightUnits, orientation, notes: optional(placementNotes) }; if (editingPlacement === 'new') await api.racks.placements.create(id!, input); else await api.racks.placements.update(id!, (editingPlacement as RackPlacement).id, input); setRack(await api.racks.get(id!)); setEditingPlacement(null); setView(orientation) } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not save placement.') } finally { setBusy(false) } }
+  async function removePlacement(placement: RackPlacement) { if (!window.confirm(`Remove ${placement.asset.name} from this rack?`)) return; setError(null); try { await api.racks.placements.delete(id!, placement.id); setRack(await api.racks.get(id!)); setEditingPlacement(null) } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not remove placement.') } }
+  async function removeRack() { if (!rack || !confirmDelete(rack.name)) return; setError(null); try { await api.racks.delete(rack.id); navigate('/racks') } catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not delete rack.') } }
+  if (loading) return <Loading />
+  if (!rack) return <><Link to="/racks">← Racks</Link><ErrorNotice error={error} /></>
+  const top = rack.startingUnit + rack.totalUnits - 1
+  const units = Array.from({ length: rack.totalUnits }, (_, index) => top - index)
+  return <><Link className="back-link" to="/racks">← Racks</Link><div className="page-heading"><div><p className="eyebrow">Rack</p><h1>{rack.name}</h1><p className="muted">{rack.totalUnits}U · {locations.find(row => row.id === rack.locationId)?.name || 'No location'}</p></div><div className="actions"><button className="secondary" onClick={openRack}>Edit rack</button><button className="danger-outline" onClick={() => void removeRack()}>Delete rack</button></div></div><ErrorNotice error={error} />
+    {editingRack && <section className="panel"><h2>Edit rack</h2><form className="form-grid" onSubmit={e => void saveRack(e)}><Field label="Name"><input required value={name} onChange={e => setName(e.target.value)} /></Field><Field label="Location"><select value={locationId} onChange={e => setLocationId(e.target.value)}><option value="">No location</option>{locations.map(location => <option key={location.id} value={location.id}>{location.name}</option>)}</select></Field><Field label="Total U"><input type="number" min="1" max="100" value={totalUnits} onChange={e => setTotalUnits(Number(e.target.value))} /></Field><Field label="Starting U"><input type="number" min="1" value={startingUnit} onChange={e => setStartingUnit(Number(e.target.value))} /></Field><Field label="Description"><input value={description} onChange={e => setDescription(e.target.value)} /></Field><Field label="Notes"><input value={notes} onChange={e => setNotes(e.target.value)} /></Field><div className="form-actions"><button className="secondary" type="button" onClick={() => setEditingRack(false)}>Cancel</button><button disabled={busy}>Save rack</button></div></form></section>}
+    <section className="panel"><div className="section-heading"><h2>Rack layout</h2><button disabled={!assets.length} onClick={() => openPlacement('new')}>+ Place asset</button></div><div className="inline rack-tabs" role="group" aria-label="Rack orientation"><button className={view === 'front' ? '' : 'secondary'} aria-pressed={view === 'front'} onClick={() => setView('front')}>Front</button><button className={view === 'rear' ? '' : 'secondary'} aria-pressed={view === 'rear'} onClick={() => setView('rear')}>Rear</button></div><div className="rack-layout" aria-label={`${rack.name} ${view} layout`}>{units.map(unit => { const placement = rack.placements.find(row => row.orientation === view && row.startUnit <= unit && unit < row.startUnit + row.heightUnits); const topUnit = placement && unit === placement.startUnit + placement.heightUnits - 1; return <div className="rack-unit" key={unit}><span className="rack-number">{unit}U</span><div className={placement ? 'rack-occupied' : 'rack-empty'}>{placement ? topUnit ? <><Link to={`/assets/${placement.assetId}`}>{placement.asset.name}</Link><span className="muted">{placement.heightUnits}U</span><button className="secondary small" onClick={() => openPlacement(placement)}>Edit</button></> : <span aria-label={`${placement.asset.name} continues`}>│</span> : <span>Empty</span>}</div></div> })}</div><p className="muted">Front and rear placements are shown separately. Multi-unit assets fill every occupied U.</p></section>
+    {editingPlacement && <section className="panel"><h2>{editingPlacement === 'new' ? 'Place asset' : 'Edit placement'}</h2><form className="form-grid" onSubmit={e => void savePlacement(e)}><Field label="Asset"><select required value={assetId} onChange={e => setAssetId(e.target.value)}>{assets.map(asset => <option key={asset.id} value={asset.id}>{asset.name}</option>)}</select></Field><Field label="Orientation"><select value={orientation} onChange={e => setOrientation(e.target.value as RackOrientation)}><option value="front">Front</option><option value="rear">Rear</option></select></Field><Field label="Starting U"><input type="number" min={rack.startingUnit} max={top} required value={startUnit} onChange={e => setStartUnit(Number(e.target.value))} /></Field><Field label="Height U"><input type="number" min="1" required value={heightUnits} onChange={e => setHeightUnits(Number(e.target.value))} /></Field><div className="full"><Field label="Notes"><input value={placementNotes} onChange={e => setPlacementNotes(e.target.value)} /></Field></div><div className="form-actions">{editingPlacement !== 'new' && <button className="danger-outline" type="button" onClick={() => void removePlacement(editingPlacement)}>Remove placement</button>}<button className="secondary" type="button" onClick={() => setEditingPlacement(null)}>Cancel</button><button disabled={busy || !assetId}>Save placement</button></div></form></section>}
+  </>
+}

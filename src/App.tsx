@@ -7,6 +7,11 @@ import Assets from './pages/Assets'
 import AssetDetail from './pages/AssetDetail'
 import Projects from './pages/Projects'
 import ProjectDetail from './pages/ProjectDetail'
+import Components from './pages/Components'
+import Locations from './pages/Locations'
+import McpSettings from './pages/McpSettings'
+import Racks from './pages/Racks'
+import RackDetail from './pages/RackDetail'
 
 function Login() {
   const [email, setEmail] = useState('')
@@ -20,9 +25,9 @@ function Login() {
     if (error) setError(error.message)
     setBusy(false)
   }
-  if (!authConfigured) return <main className="login"><div className="login-card"><h1>RackChief</h1><ErrorNotice error="Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to enable login." /></div></main>
+  if (!authConfigured) return <main className="login"><div className="login-card"><img className="login-logo" src="/rackchief-horizontal.png" alt="RackChief" /><h1 className="sr-only">RackChief</h1><ErrorNotice error="Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to enable login." /></div></main>
   return <main className="login"><form className="login-card" onSubmit={submit}>
-    <div className="brand-mark">RC</div><h1>RackChief</h1><p>Sign in to manage your lab.</p>
+    <img className="login-logo" src="/rackchief-horizontal.png" alt="RackChief" /><h1 className="sr-only">RackChief</h1><p>Sign in to manage your lab.</p>
     <ErrorNotice error={error} />
     <label className="field"><span>Email</span><input type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)} /></label>
     <label className="field"><span>Password</span><input type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} /></label>
@@ -46,14 +51,19 @@ export default function App() {
   if (!session) return location.pathname === '/login' ? <Login /> : <Navigate to="/login" replace state={{ from: location.pathname }} />
   if (location.pathname === '/login') return <Navigate to="/assets" replace />
   return <div className="shell">
-    <aside className="sidebar"><Link className="brand" to="/assets"><span className="brand-mark">RC</span><span>RackChief</span></Link>
-      <nav aria-label="Main navigation"><NavLink to="/assets" className={({ isActive }) => isActive ? 'active' : ''}>Assets</NavLink><NavLink to="/projects" className={({ isActive }) => isActive ? 'active' : ''}>Projects</NavLink></nav>
+    <aside className="sidebar"><Link className="brand" to="/assets"><img src="/rackchief-icon.png" alt="" /><span>RackChief</span></Link>
+      <nav aria-label="Main navigation"><NavLink to="/assets" className={({ isActive }) => isActive ? 'active' : ''}>Assets</NavLink><NavLink to="/components" className={({ isActive }) => isActive ? 'active' : ''}>Components</NavLink><NavLink to="/locations" className={({ isActive }) => isActive ? 'active' : ''}>Locations</NavLink><NavLink to="/racks" className={({ isActive }) => isActive ? 'active' : ''}>Racks</NavLink><NavLink to="/projects" className={({ isActive }) => isActive ? 'active' : ''}>Projects</NavLink><NavLink to="/settings/mcp" className={({ isActive }) => isActive ? 'active' : ''}>MCP settings</NavLink></nav>
       <div className="account"><span title={session.user.email}>{session.user.email}</span><button className="text-button" onClick={() => void supabase!.auth.signOut()}>Sign out</button></div>
     </aside>
     <main className="content"><Routes>
       <Route path="/" element={<Navigate to="/assets" replace />} />
       <Route path="/assets" element={<Assets />} />
       <Route path="/assets/:id" element={<AssetDetail />} />
+      <Route path="/components" element={<Components />} />
+      <Route path="/locations" element={<Locations />} />
+      <Route path="/racks" element={<Racks />} />
+      <Route path="/racks/:id" element={<RackDetail />} />
+      <Route path="/settings/mcp" element={<McpSettings />} />
       <Route path="/projects" element={<Projects />} />
       <Route path="/projects/:id" element={<ProjectDetail />} />
       <Route path="*" element={<div className="panel"><h1>Page not found</h1><Link to="/assets">Go to assets</Link></div>} />

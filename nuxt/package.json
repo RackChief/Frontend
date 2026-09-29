@@ -1,0 +1,26 @@
+{
+  "name": "rackchief-frontend-nuxt",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev --host 0.0.0.0",
+    "build": "nuxt build",
+    "typecheck": "nuxt typecheck",
+    "preview": "nuxt preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@nuxt/icon": "latest",
+    "@nuxt/image": "latest",
+    "@nuxt/ui": "latest",
+    "@supabase/supabase-js": "^2.117.2",
+    "nuxt": "^4",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@iconify-json/lucide": "latest",
+    "@types/node": "^26.6.3",
+    "typescript": "^5.9.0",
+    "vue-tsc": "latest"
+  }
+}

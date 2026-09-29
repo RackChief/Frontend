@@ -1,13 +1,35 @@
 # RackChief Frontend
 
-React, TypeScript, and Vite admin UI for the RackChief V1 API.
+React, TypeScript, React Router, and Vite admin UI for the RackChief V1 REST API. Supabase Auth handles sign-in and session refresh. All RackChief application data comes from the backend, not the Supabase Data API.
 
-## Run locally
+## Configuration
 
-1. Copy `.env.example` to `.env.local` and set the API URL and the **publishable** Supabase URL/key used by the backend. Never put the Supabase secret key in this app.
-2. Run `npm install` and `npm run dev` in `Frontend/`.
-3. Start the backend and sign in with an existing Supabase email/password user. This UI intentionally has no signup or password reset flow.
+Copy `.env.example` to `.env.local` for standalone development. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to the Supabase project used by the backend. Never use a Supabase secret key in the frontend.
 
-`npm run build` checks TypeScript and produces `dist/`. The default API URL is `http://localhost:3000`. The app uses `/api/v1` and needs the server to serve `index.html` for client routes such as `/assets/:id` and `/projects/:id`.
+The API client uses relative `/api/v1` paths by default. Vite proxies `/api` and `/mcp` to `http://localhost:3000` for standalone development. Set `VITE_PROXY_TARGET` to another backend address if needed. `VITE_API_URL` is an optional **browser-visible** origin override; leave it unset for same-origin access. Docker Compose sets the proxy target to the internal backend service automatically, so only the frontend host port is required.
 
-API models in `src/types/api.ts` mirror the Zod schemas in `Backend/src/modules/`. Asset types are read only in V1. Archive and restore use dedicated endpoints; permanent deletion is offered only after archiving.
+## Run
+
+```sh
+npm install
+npm run dev
+npm run build
+```
+
+Start the RackChief backend and sign in with an existing Supabase email/password user. There is no signup or password reset page in V1. The backend requires a Supabase bearer token on `/api/v1/*`; the shared API client attaches the current session token and signs out after a 401 response. The backend owns all validation and data access.
+
+## Routes
+
+| Route | Purpose |
+| --- | --- |
+| `/login` | Supabase sign-in |
+| `/assets`, `/assets/:id` | Assets and inventory detail, including hardware, rack placement, network, relationships, and projects |
+| `/components` | Installed and spare components |
+| `/locations` | Location hierarchy and assigned infrastructure |
+| `/racks`, `/racks/:id` | Racks and front/rear U layout |
+| `/projects`, `/projects/:id` | Project planning, work, purchases, updates, and associated assets |
+| `/settings/mcp` | MCP enablement and token lifecycle |
+
+The router needs the deployment server to serve `index.html` for client routes. Asset types and component types come from the backend. Component types are read-only in this UI.
+
+Runtime branding assets live in `public/` and are derived from the top-level `assets/` branding directory. The frontend currently uses handwritten API types in `src/types/api.ts` based on the backend Zod/OpenAPI schemas. The V1 contract should be checked before changing these types; OpenAPI generation can replace them after the contract stabilizes.

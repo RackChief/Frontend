@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
 export function ErrorNotice({ error }: { error: string | null }) { return error ? <div role="alert" className="notice error">{error}</div> : null }
-export function Loading() { return <div className="notice">Loading…</div> }
+export function Loading() { return <div className="notice" role="status" aria-live="polite">Loading…</div> }
 export function Empty({ children }: { children: ReactNode }) { return <div className="empty">{children}</div> }
 export function Badge({ value }: { value: string }) { return <span className={`badge badge-${value}`}>{value.replaceAll('_', ' ')}</span> }
 export function Field({ label, children }: { label: string; children: ReactNode }) { return <label className="field"><span>{label}</span>{children}</label> }
