@@ -19,7 +19,10 @@ const iso = (value: string) => value ? new Date(value).toISOString() : null
 async function submit() {
   if (!form.title.trim()) { error.value = 'Title is required.'; return }
   busy.value = true; error.value = null
-  try { await props.onSave({ type: form.type, title: form.title.trim(), description: optional(form.description), status: form.status, targetDate: optional(form.targetDate), vendor: optional(form.vendor), url: optional(form.url), estimatedCost: amount(form.estimatedCost), actualCost: amount(form.actualCost), shippingCost: amount(form.shippingCost), orderedAt: iso(form.orderedAt), receivedAt: iso(form.receivedAt), completedAt: iso(form.completedAt), notes: optional(form.notes), sortOrder: Number(form.sortOrder) }) }
+  try {
+    const purchase = form.type === 'purchase'
+    await props.onSave({ type: form.type, title: form.title.trim(), description: optional(form.description), status: form.status, targetDate: optional(form.targetDate), vendor: purchase ? optional(form.vendor) : null, url: purchase ? optional(form.url) : null, estimatedCost: purchase ? amount(form.estimatedCost) : null, actualCost: purchase ? amount(form.actualCost) : null, shippingCost: purchase ? amount(form.shippingCost) : null, orderedAt: purchase ? iso(form.orderedAt) : null, receivedAt: purchase ? iso(form.receivedAt) : null, completedAt: iso(form.completedAt), notes: optional(form.notes), sortOrder: Number(form.sortOrder) })
+  }
   catch (cause) { error.value = cause instanceof Error ? cause.message : 'Could not save item.' }
   finally { busy.value = false }
 }

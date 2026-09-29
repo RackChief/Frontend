@@ -17,7 +17,10 @@ export class ApiError extends Error {
 interface ApiIssue { path?: PropertyKey[]; message?: string }
 export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const { data: { session } } = await client?.auth.getSession() || { data: { session: null } }
-  if (!session) throw new ApiError(401, 'Your session has ended. Please sign in again.')
+  if (!session) {
+    onUnauthorized()
+    throw new ApiError(401, 'Your session has ended. Please sign in again.')
+  }
   try {
     return await $fetch<T>(`${origin}/api/v1${path}`, {
       method: (options.method || 'GET') as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',

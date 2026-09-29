@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { api } from '../../../services/api'
 import type { Asset, Location, PlacementFields, RackDetail, RackFields, RackOrientation, RackPlacement } from '../../../types/api'
+const noSelection = '__none__'
 const route = useRoute()
 const id = computed(() => String(route.params.id))
 const rack = ref<RackDetail | null>(null)
@@ -9,20 +10,20 @@ const locations = ref<Location[]>([])
 const view = ref<RackOrientation>('front')
 const editingRack = ref(false)
 const editingPlacement = ref<RackPlacement | 'new' | null>(null)
-const rackForm = reactive({ name: '', totalUnits: 42, startingUnit: 1, locationId: '', description: '', notes: '' })
+const rackForm = reactive({ name: '', totalUnits: 42, startingUnit: 1, locationId: noSelection, description: '', notes: '' })
 const placementForm = reactive({ assetId: '', startUnit: 1, heightUnits: 1, orientation: 'front' as RackOrientation, notes: '' })
 const loading = ref(true)
 const busy = ref(false)
 const error = ref<string | null>(null)
-const locationOptions = computed(() => [{ label: 'No location', value: '' }, ...locations.value.map(place => ({ label: place.name, value: place.id }))])
+const locationOptions = computed(() => [{ label: 'No location', value: noSelection }, ...locations.value.map(place => ({ label: place.name, value: place.id }))])
 const assetOptions = computed(() => assets.value.map(asset => ({ label: asset.name, value: asset.id })))
 const units = computed(() => rack.value ? Array.from({ length: rack.value.totalUnits }, (_, index) => rack.value!.startingUnit + rack.value!.totalUnits - 1 - index) : [])
 onMounted(async () => { try { [rack.value, assets.value, locations.value] = await Promise.all([api.racks.get(id.value), api.assets.list(), api.locations.list()]) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Could not load rack.' } finally { loading.value = false } })
 async function refresh() { rack.value = await api.racks.get(id.value) }
-function openRack() { if (!rack.value) return; Object.assign(rackForm, { name: rack.value.name, totalUnits: rack.value.totalUnits, startingUnit: rack.value.startingUnit, locationId: rack.value.locationId || '', description: rack.value.description || '', notes: rack.value.notes || '' }); editingRack.value = true }
+function openRack() { if (!rack.value) return; Object.assign(rackForm, { name: rack.value.name, totalUnits: rack.value.totalUnits, startingUnit: rack.value.startingUnit, locationId: rack.value.locationId || noSelection, description: rack.value.description || '', notes: rack.value.notes || '' }); editingRack.value = true }
 function openPlacement(row: RackPlacement | 'new') { if (!rack.value) return; editingPlacement.value = row; Object.assign(placementForm, { assetId: row === 'new' ? assets.value[0]?.id || '' : row.assetId, startUnit: row === 'new' ? rack.value.startingUnit : row.startUnit, heightUnits: row === 'new' ? 1 : row.heightUnits, orientation: row === 'new' ? view.value : row.orientation, notes: row === 'new' ? '' : row.notes || '' }) }
 function placementAt(unit: number) { return rack.value?.placements.find(row => row.orientation === view.value && row.startUnit <= unit && unit < row.startUnit + row.heightUnits) }
-async function saveRack() { busy.value = true; error.value = null; try { const input: RackFields = { name: rackForm.name.trim(), totalUnits: Number(rackForm.totalUnits), startingUnit: Number(rackForm.startingUnit), locationId: rackForm.locationId || null, description: rackForm.description.trim() || null, notes: rackForm.notes.trim() || null }; await api.racks.update(id.value, input); await refresh(); editingRack.value = false } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Could not update rack.' } finally { busy.value = false } }
+async function saveRack() { busy.value = true; error.value = null; try { const input: RackFields = { name: rackForm.name.trim(), totalUnits: Number(rackForm.totalUnits), startingUnit: Number(rackForm.startingUnit), locationId: rackForm.locationId === noSelection ? null : rackForm.locationId, description: rackForm.description.trim() || null, notes: rackForm.notes.trim() || null }; await api.racks.update(id.value, input); await refresh(); editingRack.value = false } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Could not update rack.' } finally { busy.value = false } }
 async function savePlacement() { busy.value = true; error.value = null; try { const input: PlacementFields = { assetId: placementForm.assetId, startUnit: Number(placementForm.startUnit), heightUnits: Number(placementForm.heightUnits), orientation: placementForm.orientation, notes: placementForm.notes.trim() || null }; if (editingPlacement.value === 'new') await api.racks.placements.create(id.value, input); else await api.racks.placements.update(id.value, (editingPlacement.value as RackPlacement).id, input); await refresh(); editingPlacement.value = null; view.value = input.orientation || 'front' } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Could not save placement.' } finally { busy.value = false } }
 async function removePlacement(row: RackPlacement) { if (!window.confirm(`Remove ${row.asset.name} from this rack?`)) return; error.value = null; try { await api.racks.placements.delete(id.value, row.id); await refresh(); editingPlacement.value = null } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Could not remove placement.' } }
 async function removeRack() { if (!rack.value || !window.confirm(`Permanently delete “${rack.value.name}”?`)) return; error.value = null; try { await api.racks.delete(id.value); await navigateTo('/racks') } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Could not delete rack.' } }

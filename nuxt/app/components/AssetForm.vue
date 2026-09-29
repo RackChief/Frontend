@@ -3,21 +3,22 @@ import type { Asset, AssetType, CreateAsset, Location, UpdateAsset, EditableAsse
 import { assetStatuses } from '../../types/api'
 
 const props = defineProps<{ asset?: Asset; types: AssetType[]; locations: Location[]; onSave: (input: CreateAsset | UpdateAsset) => Promise<void>; onCancel: () => void }>()
+const noSelection = '__none__'
 const form = reactive({
   name: props.asset?.name || '', assetTypeId: props.asset?.assetTypeId || props.types[0]?.id || '',
   status: (props.asset?.status === 'archived' ? 'active' : props.asset?.status || 'active') as EditableAssetStatus,
-  locationId: props.asset?.locationId || '', hostname: props.asset?.hostname || '', ipAddress: props.asset?.ipAddress || '',
+  locationId: props.asset?.locationId || noSelection, hostname: props.asset?.hostname || '', ipAddress: props.asset?.ipAddress || '',
   manufacturer: props.asset?.manufacturer || '', model: props.asset?.model || '', serialNumber: props.asset?.serialNumber || '', notes: props.asset?.notes || '',
 })
 const busy = ref(false)
 const error = ref<string | null>(null)
 const typeOptions = computed(() => props.types.map(type => ({ label: type.name, value: type.id })))
-const locationOptions = computed(() => [{ label: 'No location', value: '' }, ...props.locations.map(location => ({ label: location.name, value: location.id }))])
+const locationOptions = computed(() => [{ label: 'No location', value: noSelection }, ...props.locations.map(location => ({ label: location.name, value: location.id }))])
 const statusOptions = assetStatuses.map(value => ({ label: value, value }))
 async function submit() {
   if (!form.name.trim() || !form.assetTypeId) { error.value = 'Name and asset type are required.'; return }
   busy.value = true; error.value = null
-  const fields = { name: form.name.trim(), assetTypeId: form.assetTypeId, status: form.status, locationId: form.locationId || null, hostname: form.hostname.trim(), ipAddress: form.ipAddress.trim(), manufacturer: form.manufacturer.trim(), model: form.model.trim(), serialNumber: form.serialNumber.trim(), notes: form.notes.trim() }
+  const fields = { name: form.name.trim(), assetTypeId: form.assetTypeId, status: form.status, locationId: form.locationId === noSelection ? null : form.locationId, hostname: form.hostname.trim(), ipAddress: form.ipAddress.trim(), manufacturer: form.manufacturer.trim(), model: form.model.trim(), serialNumber: form.serialNumber.trim(), notes: form.notes.trim() }
   const input: CreateAsset | UpdateAsset = props.asset ? { ...fields, hostname: fields.hostname || null, ipAddress: fields.ipAddress || null, manufacturer: fields.manufacturer || null, model: fields.model || null, serialNumber: fields.serialNumber || null, notes: fields.notes || null } : { ...fields, hostname: fields.hostname || undefined, ipAddress: fields.ipAddress || undefined, manufacturer: fields.manufacturer || undefined, model: fields.model || undefined, serialNumber: fields.serialNumber || undefined, notes: fields.notes || undefined }
   try { await props.onSave(input) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Could not save asset.' } finally { busy.value = false }
 }

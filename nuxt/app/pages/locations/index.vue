@@ -1,22 +1,35 @@
 <script setup lang="ts">
 import { api } from '../../../services/api'
 import type { Asset, Component, Location, LocationFields, Rack } from '../../../types/api'
+const noSelection = '__none__'
 const locations = ref<Location[]>([])
 const assets = ref<Asset[]>([])
 const components = ref<Component[]>([])
 const racks = ref<Rack[]>([])
 const editing = ref<Location | 'new' | null>(null)
 const name = ref('')
-const parentId = ref('')
+const parentId = ref(noSelection)
 const description = ref('')
 const loading = ref(true)
 const busy = ref(false)
 const error = ref<string | null>(null)
 const tree = computed(() => { const result: { location: Location; depth: number }[] = []; const seen = new Set<string>(); function walk(parent: string | null, depth: number) { for (const location of locations.value.filter(row => row.parentId === parent)) { if (seen.has(location.id)) continue; seen.add(location.id); result.push({ location, depth }); walk(location.id, depth + 1) } } walk(null, 0); for (const location of locations.value) if (!seen.has(location.id)) { seen.add(location.id); result.push({ location, depth: 0 }); walk(location.id, 1) } return result })
-const parentOptions = computed(() => [{ label: 'Root location', value: '' }, ...locations.value.filter(row => editing.value === 'new' || row.id !== editing.value?.id).map(row => ({ label: row.name, value: row.id }))])
+const invalidParents = computed(() => {
+  const ids = new Set<string>()
+  const current = editing.value
+  if (!current || current === 'new') return ids
+  ids.add(current.id)
+  let size: number
+  do {
+    size = ids.size
+    for (const row of locations.value) if (row.parentId && ids.has(row.parentId)) ids.add(row.id)
+  } while (ids.size > size)
+  return ids
+})
+const parentOptions = computed(() => [{ label: 'Root location', value: noSelection }, ...locations.value.filter(row => !invalidParents.value.has(row.id)).map(row => ({ label: row.name, value: row.id }))])
 onMounted(async () => { try { [locations.value, assets.value, components.value, racks.value] = await Promise.all([api.locations.list(), api.assets.list(), api.components.list(), api.racks.list()]) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Could not load locations.' } finally { loading.value = false } })
-function open(row: Location | 'new', suggestedParent = '') { editing.value = row; name.value = row === 'new' ? '' : row.name; parentId.value = row === 'new' ? suggestedParent : row.parentId || ''; description.value = row === 'new' ? '' : row.description || ''; error.value = null }
-async function save() { busy.value = true; error.value = null; try { const input: LocationFields = { name: name.value.trim(), parentId: parentId.value || null, description: description.value.trim() || null }; const row = editing.value === 'new' ? await api.locations.create(input) : await api.locations.update((editing.value as Location).id, input); locations.value = editing.value === 'new' ? [...locations.value, row] : locations.value.map(item => item.id === row.id ? row : item); editing.value = null } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Could not save location.' } finally { busy.value = false } }
+function open(row: Location | 'new', suggestedParent = noSelection) { editing.value = row; name.value = row === 'new' ? '' : row.name; parentId.value = row === 'new' ? suggestedParent : row.parentId || noSelection; description.value = row === 'new' ? '' : row.description || ''; error.value = null }
+async function save() { busy.value = true; error.value = null; try { const input: LocationFields = { name: name.value.trim(), parentId: parentId.value === noSelection ? null : parentId.value, description: description.value.trim() || null }; const row = editing.value === 'new' ? await api.locations.create(input) : await api.locations.update((editing.value as Location).id, input); locations.value = editing.value === 'new' ? [...locations.value, row] : locations.value.map(item => item.id === row.id ? row : item); editing.value = null } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Could not save location.' } finally { busy.value = false } }
 async function remove(row: Location) { if (!window.confirm(`Permanently delete “${row.name}”?`)) return; error.value = null; try { await api.locations.delete(row.id); locations.value = locations.value.filter(item => item.id !== row.id) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Could not delete location.' } }
 </script>
 

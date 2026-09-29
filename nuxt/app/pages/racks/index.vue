@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { api } from '../../../services/api'
 import type { Location, RackDetail, RackFields } from '../../../types/api'
+const noSelection = '__none__'
 const racks = ref<RackDetail[]>([])
 const locations = ref<Location[]>([])
 const loading = ref(true)
 const creating = ref(false)
 const busy = ref(false)
 const error = ref<string | null>(null)
-const form = reactive({ name: '', totalUnits: 42, startingUnit: 1, locationId: '', description: '' })
+const form = reactive({ name: '', totalUnits: 42, startingUnit: 1, locationId: noSelection, description: '' })
 onMounted(async () => { try { const [rows, places] = await Promise.all([api.racks.list(), api.locations.list()]); racks.value = await Promise.all(rows.map(row => api.racks.get(row.id))); locations.value = places } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Could not load racks.' } finally { loading.value = false } })
-const locationOptions = computed(() => [{ label: 'No location', value: '' }, ...locations.value.map(place => ({ label: place.name, value: place.id }))])
+const locationOptions = computed(() => [{ label: 'No location', value: noSelection }, ...locations.value.map(place => ({ label: place.name, value: place.id }))])
 function usedUnits(rack: RackDetail) { const used = new Set<number>(); rack.placements.forEach(placement => { for (let unit = placement.startUnit; unit < placement.startUnit + placement.heightUnits; unit++) used.add(unit) }); return used.size }
-async function create() { busy.value = true; error.value = null; try { const input: RackFields = { name: form.name.trim(), totalUnits: Number(form.totalUnits), startingUnit: Number(form.startingUnit), locationId: form.locationId || null, description: form.description.trim() || null }; const rack = await api.racks.create(input); await navigateTo(`/racks/${rack.id}`) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Could not create rack.' } finally { busy.value = false } }
+async function create() { busy.value = true; error.value = null; try { const input: RackFields = { name: form.name.trim(), totalUnits: Number(form.totalUnits), startingUnit: Number(form.startingUnit), locationId: form.locationId === noSelection ? null : form.locationId, description: form.description.trim() || null }; const rack = await api.racks.create(input); await navigateTo(`/racks/${rack.id}`) } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Could not create rack.' } finally { busy.value = false } }
 </script>
 
 <template>

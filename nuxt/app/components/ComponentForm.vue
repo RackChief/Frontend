@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { componentStatuses, type Asset, type Component, type ComponentFields, type ComponentStatus, type ComponentType, type Location } from '../../types/api'
 const props = defineProps<{ component?: Component; types: ComponentType[]; assets: Asset[]; locations: Location[]; defaultAssetId?: string; onSave: (input: ComponentFields) => Promise<void>; onCancel: () => void }>()
+const noSelection = '__none__'
 const localDate = (value: string | null | undefined) => value ? new Date(new Date(value).getTime() - new Date(value).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''
 type AttributeRow = { key: string; value: string; original?: unknown; originalText?: string }
 const form = reactive({
   name: props.component?.name || '', componentTypeId: props.component?.componentTypeId || props.types[0]?.id || '',
-  assetId: props.component?.assetId || props.defaultAssetId || '', locationId: props.component?.locationId || '',
+  assetId: props.component?.assetId || props.defaultAssetId || noSelection, locationId: props.component?.locationId || noSelection,
   status: (props.component?.status || (props.defaultAssetId ? 'installed' : 'spare')) as ComponentStatus,
   quantity: props.component?.quantity || 1, manufacturer: props.component?.manufacturer || '', model: props.component?.model || '',
   partNumber: props.component?.partNumber || '', serialNumber: props.component?.serialNumber || '',
@@ -14,19 +15,19 @@ const form = reactive({
 })
 const attributes = ref<AttributeRow[]>(Object.entries(props.component?.attributes || {}).map(([key, value]) => ({ key, value: typeof value === 'string' ? value : JSON.stringify(value), original: value, originalText: typeof value === 'string' ? value : JSON.stringify(value) })))
 const typeOptions = computed(() => props.types.map(type => ({ label: type.name, value: type.id })))
-const assetOptions = computed(() => [{ label: 'Unassigned / spare', value: '' }, ...props.assets.map(asset => ({ label: asset.name, value: asset.id }))])
-const locationOptions = computed(() => [{ label: 'No location', value: '' }, ...props.locations.map(location => ({ label: location.name, value: location.id }))])
+const assetOptions = computed(() => [{ label: 'Unassigned / spare', value: noSelection }, ...props.assets.map(asset => ({ label: asset.name, value: asset.id }))])
+const locationOptions = computed(() => [{ label: 'No location', value: noSelection }, ...props.locations.map(location => ({ label: location.name, value: location.id }))])
 const statusOptions = componentStatuses.map(value => ({ label: value, value }))
 const busy = ref(false)
 const error = ref<string | null>(null)
 const optional = (value: string) => value.trim() || null
-function changeAsset(value: string) { form.assetId = value; form.status = value ? 'installed' : 'spare' }
+function changeAsset(value: string) { form.assetId = value; form.status = value === noSelection ? 'spare' : 'installed' }
 async function submit() {
   busy.value = true; error.value = null
   try {
     const entries = attributes.value.filter(row => row.key.trim()).map(row => [row.key.trim(), row.originalText === row.value ? row.original : row.value] as const)
     if (new Set(entries.map(row => row[0])).size !== entries.length) throw new Error('Attribute names must be unique.')
-    await props.onSave({ name: form.name.trim(), componentTypeId: form.componentTypeId, assetId: form.assetId || null, locationId: form.locationId || null, status: form.status, quantity: Number(form.quantity), manufacturer: optional(form.manufacturer), model: optional(form.model), partNumber: optional(form.partNumber), serialNumber: optional(form.serialNumber), storageLocation: optional(form.storageLocation), installedAt: form.installedAt ? new Date(form.installedAt).toISOString() : null, removedAt: form.removedAt ? new Date(form.removedAt).toISOString() : null, notes: optional(form.notes), attributes: Object.fromEntries(entries) })
+    await props.onSave({ name: form.name.trim(), componentTypeId: form.componentTypeId, assetId: form.assetId === noSelection ? null : form.assetId, locationId: form.locationId === noSelection ? null : form.locationId, status: form.status, quantity: Number(form.quantity), manufacturer: optional(form.manufacturer), model: optional(form.model), partNumber: optional(form.partNumber), serialNumber: optional(form.serialNumber), storageLocation: optional(form.storageLocation), installedAt: form.installedAt ? new Date(form.installedAt).toISOString() : null, removedAt: form.removedAt ? new Date(form.removedAt).toISOString() : null, notes: optional(form.notes), attributes: Object.fromEntries(entries) })
   } catch (cause) { error.value = cause instanceof Error ? cause.message : 'Could not save component.' }
   finally { busy.value = false }
 }
