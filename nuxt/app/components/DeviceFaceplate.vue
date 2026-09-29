@@ -6,7 +6,7 @@ const source = ref('')
 async function load() {
   failed.value = false
   source.value = ''
-  try { const urls = await api.images.urls(props.assetId); source.value = `${urls[props.side]}${props.version ? `&v=${props.version}` : ''}` }
+  try { const urls = await api.images.urls(props.assetId); source.value = urls[props.side] }
   catch { failed.value = true }
 }
 onMounted(load)
