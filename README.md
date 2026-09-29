@@ -1,44 +1,20 @@
 # RackChief Frontend
 
-React, TypeScript, React Router, and Vite admin UI for the RackChief V1 REST API. Supabase Auth handles sign-in and session refresh. All RackChief application data comes from the backend, not the Supabase Data API.
+The RackChief V1 frontend lives in [`nuxt/`](nuxt/). It uses Nuxt 4, Vue 3, TypeScript, Nuxt UI, Nuxt Icon, Nuxt Image, and Supabase JS. Supabase is used for authentication. RackChief application data is accessed through the RackChief backend, never through Supabase application tables.
 
-## Configuration
+## Run with RackChief Compose
 
-Copy `.env.example` to `.env.local` for standalone development. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to the Supabase project used by the backend. Never use a Supabase secret key in the frontend.
-
-The API client uses relative `/api/v1` paths by default. Vite proxies `/api` and `/mcp` to `http://localhost:3000` for standalone development. Set `VITE_PROXY_TARGET` to another backend address if needed. `VITE_API_URL` is an optional **browser-visible** origin override; leave it unset for same-origin access. Docker Compose sets the proxy target to the internal backend service automatically, so only the frontend host port is required.
-
-## Run
+From the parent RackChief repository, copy `.env.example` to `.env`, configure the backend and Supabase values, then run:
 
 ```sh
-npm install
-npm run dev
-npm run build
+docker compose -f docker-compose.dev.yml up --build
 ```
 
-Start the RackChief backend and sign in with an existing Supabase email/password user. There is no signup or password reset page in V1. The backend requires a Supabase bearer token on `/api/v1/*`; the shared API client attaches the current session token and signs out after a 401 response. The backend owns all validation and data access.
+The Nuxt app opens at `http://localhost:5173` by default. `FRONTEND_PORT` changes that host and container port. The backend stays private to the Compose network. Nuxt proxies same-origin `/api/v1/*` and `/mcp` requests to it. The browser does not need a Docker hostname or backend CORS configuration.
 
-## Routes
+## Standalone development
 
-| Route | Purpose |
-| --- | --- |
-| `/login` | Supabase sign-in |
-| `/assets`, `/assets/:id` | Assets and inventory detail, including hardware, rack placement, network, relationships, and projects |
-| `/components` | Installed and spare components |
-| `/locations` | Location hierarchy and assigned infrastructure |
-| `/racks`, `/racks/:id` | Racks and front/rear U layout |
-| `/projects`, `/projects/:id` | Project planning, work, purchases, updates, and associated assets |
-| `/settings/mcp` | MCP enablement and token lifecycle |
-
-The router needs the deployment server to serve `index.html` for client routes. Asset types and component types come from the backend. Component types are read-only in this UI.
-
-Runtime branding assets live in `public/` and are derived from the top-level `assets/` branding directory. The frontend currently uses handwritten API types in `src/types/api.ts` based on the backend Zod/OpenAPI schemas. The V1 contract should be checked before changing these types; OpenAPI generation can replace them after the contract stabilizes.
-
-## Nuxt 4 V1 staging
-
-The V1 migration lives in `nuxt/` while React remains the primary development frontend. It uses Nuxt 4, Vue 3, TypeScript, Nuxt UI, Nuxt Icon, Nuxt Image, and Supabase JS. Supabase is used for authentication. RackChief application data is accessed through the RackChief backend.
-
-For standalone development, copy `nuxt/.env.example` to `nuxt/.env` and set `NUXT_PUBLIC_SUPABASE_URL` and `NUXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Set `NUXT_PROXY_TARGET` and `NUXT_BACKEND_URL` if the backend is not at `http://localhost:3000`. The former configures the `/api/v1` proxy and Nuxt Image's backend image source; the latter configures the streamed `/mcp` proxy. Keep the Supabase secret key out of Nuxt configuration. The browser normally uses same-origin `/api/v1` paths and the shared API client attaches its bearer token.
+Copy `nuxt/.env.example` to `nuxt/.env` and set `NUXT_PUBLIC_SUPABASE_URL` and `NUXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for the same Supabase project used by the backend. Keep the Supabase secret key out of the frontend. Set `NUXT_PROXY_TARGET` and `NUXT_BACKEND_URL` when the backend is not at `http://localhost:3000`. The first controls the `/api/v1` proxy and Nuxt Image source; the second controls streamed `/mcp` requests. `NUXT_PUBLIC_API_BASE` is an optional browser-visible API origin override; leave it empty for same-origin access.
 
 ```sh
 cd nuxt
@@ -48,6 +24,23 @@ npm run typecheck
 npm run build
 ```
 
-From the repository root, `docker compose -f docker-compose.nuxt.dev.yml up --build` runs Nuxt on port 5175 with the private backend. The backend's image cache is bind-mounted at `.data/device-images/` in the root repository and survives container recreation. Default front/rear elevations are fetched lazily from the NetBox Community Device Type Library; users can upload per-asset PNG, JPEG, or WebP overrides. Signed image URLs are rendered through Nuxt Image, and missing images use a labeled generic faceplate.
+The shared API client attaches the current Supabase bearer token and displays readable API errors. Nuxt route middleware protects application pages. Supabase handles session persistence and refresh. The app uses client rendering for protected inventory data.
 
-Nuxt routes are `/login`, `/assets`, `/assets/:id`, `/components`, `/locations`, `/racks`, `/racks/:id`, `/projects`, `/projects/:id`, `/settings/mcp`, and `/settings/about`. Branding assets are in `nuxt/public/`. API types remain hand-maintained in `nuxt/types/api.ts` against the backend Zod/OpenAPI contract during V1 development. Do not query RackChief application tables directly through Supabase.
+## Routes
+
+| Route | Purpose |
+| --- | --- |
+| `/login` | Supabase sign-in |
+| `/assets`, `/assets/:id` | Assets and inventory detail, including hardware, rack placement, images, network, relationships, and projects |
+| `/components` | Installed and spare components |
+| `/locations` | Location hierarchy and assigned infrastructure |
+| `/racks`, `/racks/:id` | Racks and front/rear U layout |
+| `/projects`, `/projects/:id` | Project planning, work, purchases, updates, and associated assets |
+| `/settings/mcp` | MCP enablement and token lifecycle |
+| `/settings/about` | Version, links, and third-party attribution |
+
+Asset and component types come from the backend. Component types are read-only in this UI. API types are maintained in `nuxt/types/api.ts` against the backend Zod/OpenAPI contract during V1 development.
+
+## Device images and branding
+
+Runtime branding assets are in `nuxt/public/`. The backend lazily fetches matching front/rear elevations from the NetBox Community Device Type Library and caches them in the parent repository's `.data/device-images/netbox/` directory. Users can upload per-asset PNG, JPEG, or WebP overrides stored in `.data/device-images/custom/`. The bind mount preserves both across container recreation. Nuxt Image renders signed RackChief-served image URLs; missing images use a labeled generic faceplate.
