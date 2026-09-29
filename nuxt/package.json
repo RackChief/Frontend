@@ -22,5 +22,10 @@
     "@types/node": "^26.6.3",
     "typescript": "^5.9.0",
     "vue-tsc": "latest"
+  },
+  "allowScripts": {
+    "vue-demi@0.14.10": true,
+    "esbuild@0.27.7": true,
+    "esbuild@0.28.2": true
   }
 }
