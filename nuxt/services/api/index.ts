@@ -62,6 +62,17 @@ export const api = {
     },
     upload: (assetId: string, side: 'front' | 'rear', file: File) => request<{ side: string; contentType: string; source: 'custom' }>(`/device-images/${id(assetId)}/${side}`, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } }),
     remove: (assetId: string, side: 'front' | 'rear') => request<void>(`/device-images/${id(assetId)}/${side}`, { method: 'DELETE' }),
+    catalog: (query: string) => request<{ path: string; side: 'front' | 'rear'; label: string; rawUrl: string }[]>(`/device-images/catalog?q=${encodeURIComponent(query)}`),
+    selectCatalog: (assetId: string, side: 'front' | 'rear', path: string) => request<{ side: string; contentType: string; source: 'catalog' }>(`/device-images/${id(assetId)}/${side}/catalog`, { method: 'POST', body: json({ path }) }),
+  },
+  deviceLibrary: {
+    search: (query: string) => request<{ path: string; label: string }[]>(`/device-library/device-types?q=${encodeURIComponent(query)}`),
+    preview: (path: string) => request<{ path: string; manufacturer: string; model: string; slug?: string; partNumber?: string; rackUnits: number; isFullDepth: boolean; comments?: string; raw: Record<string, unknown> }>(`/device-library/device-types/preview?path=${encodeURIComponent(path)}`),
+  },
+  catalog: {
+    manufacturers: () => request<{ name: string; deviceCount: number }[]>('/catalog/manufacturers'),
+    search: (query: { q?: string; manufacturer?: string } = {}) => { const params = new URLSearchParams(); if (query.q) params.set('q', query.q); if (query.manufacturer) params.set('manufacturer', query.manufacturer); return request<import('../../types/api').CatalogDeviceSummary[]>(`/catalog/device-types${params.size ? `?${params}` : ''}`) },
+    get: (deviceId: string) => request<import('../../types/api').CatalogDevice>(`/catalog/device-types/${id(deviceId)}`),
   },
   network: {
     interfaces: {

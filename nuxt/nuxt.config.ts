@@ -21,6 +21,11 @@ export default defineNuxtConfig({
   },
   routeRules: {
     '/api/v1/**': { proxy: `${backend}/api/v1/**` },
+    '/startup/**': { proxy: `${backend}/startup/**` },
+    '/health': { proxy: `${backend}/health` },
+    '/docs': { proxy: `${backend}/docs` },
+    '/docs/**': { proxy: `${backend}/docs/**` },
+    '/openapi.json': { proxy: `${backend}/openapi.json` },
     '/api/auth/**': { proxy: `${backend}/api/auth/**` },
     '/mcp': { proxy: `${backend}/mcp` },
   },

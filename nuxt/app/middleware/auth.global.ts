@@ -1,5 +1,12 @@
 export default defineNuxtRouteMiddleware(async (to) => {
   if (import.meta.server) return
+  if (['/startup', '/error'].includes(to.path)) return
+  try {
+    const startup = await $fetch<{ phase: string }>('/startup/status')
+    if (startup.phase === 'error') return navigateTo('/error')
+    const health = await $fetch<{ status: string }>('/health')
+    if (health.status !== 'ok' || startup.phase !== 'ready') return navigateTo('/startup')
+  } catch { return navigateTo('/startup') }
   const { ensureSession } = useAuth()
   const session = await ensureSession()
   if (!session) {

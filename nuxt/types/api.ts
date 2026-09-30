@@ -17,10 +17,12 @@ export interface AssetType extends AssetTypeSummary { description: string | null
 export interface Asset {
   id: string; assetTypeId: string; assetType: AssetTypeSummary; name: string; status: AssetStatus; locationId: string | null
   hostname: string | null; ipAddress: string | null; manufacturer: string | null; model: string | null
-  serialNumber: string | null; notes: string | null; archivedAt: string | null; createdAt: string; updatedAt: string
+  serialNumber: string | null; rackUnits: number; deviceTypeSource: string | null; deviceTypePath: string | null; deviceTypeData: Record<string, unknown> | null; catalogProvider: string | null; catalogDeviceId: string | null; catalogRevision: string | null; notes: string | null; archivedAt: string | null; createdAt: string; updatedAt: string
 }
-export interface CreateAsset { name: string; assetTypeId: string; status?: AssetStatus; locationId?: string | null; hostname?: string; ipAddress?: string; manufacturer?: string; model?: string; serialNumber?: string; notes?: string }
-export type UpdateAsset = Partial<Pick<Asset, 'name' | 'assetTypeId' | 'locationId' | 'hostname' | 'ipAddress' | 'manufacturer' | 'model' | 'serialNumber' | 'notes'>> & { status?: EditableAssetStatus }
+export interface CatalogDeviceSummary { provider: string; id: string; sourceRevision: string; manufacturer: string; model: string; slug: string; partNumber: string | null; uHeight: number | null; frontImageAvailable: boolean; rearImageAvailable: boolean }
+export interface CatalogDevice extends CatalogDeviceSummary { isFullDepth: boolean | null; airflow: string | null; weight: number | null; weightUnit: string | null; interfaces: unknown[]; consolePorts: unknown[]; powerPorts: unknown[]; powerOutlets: unknown[]; frontPorts: unknown[]; rearPorts: unknown[]; moduleBays: unknown[]; deviceBays: unknown[]; inventoryItems: unknown[]; images: { front: string | null; rear: string | null } }
+export interface CreateAsset { name: string; assetTypeId: string; status?: AssetStatus; locationId?: string | null; hostname?: string; ipAddress?: string; manufacturer?: string; model?: string; serialNumber?: string; rackUnits?: number; deviceTypeSource?: string; deviceTypePath?: string; deviceTypeData?: Record<string, unknown>; catalogProvider?: string; catalogDeviceId?: string; catalogRevision?: string; notes?: string }
+export type UpdateAsset = Partial<Pick<Asset, 'name' | 'assetTypeId' | 'locationId' | 'hostname' | 'ipAddress' | 'manufacturer' | 'model' | 'serialNumber' | 'rackUnits' | 'notes'>> & { status?: EditableAssetStatus }
 
 export interface ProjectAsset { id: string; name: string; hostname: string | null; assetType: AssetTypeSummary }
 export interface ProjectSummary {
@@ -78,7 +80,7 @@ export interface McpTokenUpdate { name?: string; enabled?: boolean; expiresAt?: 
 export interface Rack { id: string; name: string; description: string | null; totalUnits: number; startingUnit: number; locationId: string | null; notes: string | null; createdAt: string; updatedAt: string }
 export interface RackFields { name: string; description?: string | null; totalUnits: number; startingUnit?: number; locationId?: string | null; notes?: string | null }
 export type RackOrientation = 'front' | 'rear'
-export interface RackPlacement { id: string; rackId: string; assetId: string; startUnit: number; heightUnits: number; orientation: RackOrientation; notes: string | null; createdAt: string; updatedAt: string; asset: { id: string; name: string; status: string; assetTypeId: string } }
+export interface RackPlacement { id: string; rackId: string; assetId: string; startUnit: number; heightUnits: number; orientation: RackOrientation; notes: string | null; createdAt: string; updatedAt: string; asset: { id: string; name: string; status: string; assetTypeId: string; rackUnits: number } }
 export interface RackDetail extends Rack { placements: RackPlacement[] }
 export interface PlacementFields { assetId: string; startUnit: number; heightUnits?: number; orientation?: RackOrientation; notes?: string | null }
 export type InterfaceType = 'ethernet' | 'wireless' | 'virtual' | 'bridge' | 'bond' | 'loopback' | 'other'
