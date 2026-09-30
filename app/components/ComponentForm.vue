@@ -35,7 +35,7 @@ async function submit() {
 
 <template>
   <form class="form-grid" @submit.prevent="submit"><UAlert v-if="error" color="error" :title="error" class="full" />
-    <UFormField label="Name" required><UInput v-model="form.name" required class="w-full" /></UFormField>
+    <UFormField label="Name (optional)" help="Leave blank to use the component type."><UInput v-model="form.name" :placeholder="types.find(type => type.id === form.componentTypeId)?.name || 'Component type'" class="w-full" /></UFormField>
     <UFormField label="Component type" required><USelect v-model="form.componentTypeId" :items="typeOptions" class="w-full" /></UFormField>
     <UFormField label="Installed in asset"><USelect :model-value="form.assetId" :items="assetOptions" class="w-full" @update:model-value="changeAsset" /></UFormField>
     <UFormField label="Status"><USelect v-model="form.status" :items="statusOptions" class="w-full" /></UFormField>

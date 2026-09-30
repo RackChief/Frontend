@@ -1,4 +1,4 @@
-import type { Asset, AssetDetailModel, AssetType, CreateAsset, UpdateAsset, Project, ProjectSummary, CreateProject, UpdateProject, ProjectItem, CreateProjectItem, UpdateProjectItem, ProjectUpdate, Component, ComponentType, CreateComponent, UpdateComponent, Location, LocationFields, McpSettings, McpToken, CreatedMcpToken, McpTokenUpdate, Rack, RackDetail, RackFields, RackPlacement, PlacementFields, NetworkInterface, InterfaceFields, NetworkPort, PortFields, IpAddress, AddressFields, NetworkConnection, ConnectionFields, AssetRelationship, RelationshipFields } from '../../types/api'
+import type { Asset, AssetDetailModel, AssetType, CreateAsset, UpdateAsset, Project, ProjectSummary, CreateProject, UpdateProject, ProjectItem, CreateProjectItem, UpdateProjectItem, ProjectUpdate, Component, ComponentType, CreateComponent, UpdateComponent, Location, LocationFields, McpSettings, McpToken, CreatedMcpToken, McpTokenUpdate, Rack, RackDetail, RackFields, RackPlacement, PlacementFields, UploadedDeviceImage, NetworkInterface, InterfaceFields, NetworkPort, PortFields, IpAddress, AddressFields, NetworkConnection, ConnectionFields, AssetRelationship, RelationshipFields } from '../../types/api'
 import { request } from './client'
 
 const json = (body: unknown) => JSON.stringify(body)
@@ -55,11 +55,10 @@ export const api = {
     delete: (assetId: string) => request<void>(`/assets/${id(assetId)}`, { method: 'DELETE' }),
   },
   images: {
+    library: () => request<UploadedDeviceImage[]>('/device-images/library'),
+    useUploaded: (assetId: string, side: 'front' | 'rear', sourceAssetId: string, sourceSide: 'front' | 'rear') => request<{ side: string; contentType: string; source: 'custom' }>(`/device-images/${id(assetId)}/${side}/from-asset`, { method: 'POST', body: json({ sourceAssetId, sourceSide }) }),
     customSides: (assetId: string) => request<{ front: boolean; rear: boolean }>(`/device-images/${id(assetId)}`),
-    urls: async (assetId: string) => {
-      const urls = await request<{ front: string; rear: string }>(`/device-images/${id(assetId)}/urls`)
-      return { front: urls.front.replace('/api/v1/device-images/', '/device-image-source/'), rear: urls.rear.replace('/api/v1/device-images/', '/device-image-source/') }
-    },
+    urls: (assetId: string) => request<{ front: string; rear: string }>(`/device-images/${id(assetId)}/urls`),
     upload: (assetId: string, side: 'front' | 'rear', file: File) => request<{ side: string; contentType: string; source: 'custom' }>(`/device-images/${id(assetId)}/${side}`, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } }),
     remove: (assetId: string, side: 'front' | 'rear') => request<void>(`/device-images/${id(assetId)}/${side}`, { method: 'DELETE' }),
     catalog: (query: string) => request<{ path: string; side: 'front' | 'rear'; label: string; rawUrl: string }[]>(`/device-images/catalog?q=${encodeURIComponent(query)}`),

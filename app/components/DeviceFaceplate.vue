@@ -14,7 +14,7 @@ watch(() => [props.assetId, props.side, props.version], load)
 </script>
 <template>
   <div class="device-faceplate" :class="{ compact }">
-    <NuxtImg v-if="source && !failed" :src="source" :alt="`${name} ${side} elevation`" width="800" height="160" sizes="sm:420px md:800px" loading="lazy" @error="failed = true" />
+    <img v-if="source && !failed" :src="source" :alt="`${name} ${side} elevation`" loading="lazy" @error="failed = true" />
     <div v-else class="generic-faceplate"><strong>{{ name }}</strong><span>{{ [manufacturer, model].filter(Boolean).join(' ') || 'Device' }}</span></div>
   </div>
 </template>

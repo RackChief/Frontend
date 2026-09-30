@@ -64,7 +64,7 @@ export interface Component {
   installedAt: string | null; removedAt: string | null; notes: string | null; createdAt: string; updatedAt: string
 }
 export interface ComponentFields {
-  assetId?: string | null; componentTypeId: string; locationId?: string | null; name: string
+  assetId?: string | null; componentTypeId: string; locationId?: string | null; name?: string
   manufacturer?: string | null; model?: string | null; partNumber?: string | null; serialNumber?: string | null
   quantity?: number; status: ComponentStatus; attributes?: Record<string, unknown>; storageLocation?: string | null
   installedAt?: string | null; removedAt?: string | null; notes?: string | null
@@ -80,6 +80,7 @@ export interface McpTokenUpdate { name?: string; enabled?: boolean; expiresAt?: 
 export interface Rack { id: string; name: string; description: string | null; totalUnits: number; startingUnit: number; locationId: string | null; notes: string | null; createdAt: string; updatedAt: string }
 export interface RackFields { name: string; description?: string | null; totalUnits: number; startingUnit?: number; locationId?: string | null; notes?: string | null }
 export type RackOrientation = 'front' | 'rear'
+export interface UploadedDeviceImage { assetId: string; assetName: string; side: RackOrientation; previewUrl: string }
 export interface RackPlacement { id: string; rackId: string; assetId: string; startUnit: number; heightUnits: number; orientation: RackOrientation; notes: string | null; createdAt: string; updatedAt: string; asset: { id: string; name: string; status: string; assetTypeId: string; rackUnits: number } }
 export interface RackDetail extends Rack { placements: RackPlacement[] }
 export interface PlacementFields { assetId: string; startUnit: number; heightUnits?: number; orientation?: RackOrientation; notes?: string | null }
