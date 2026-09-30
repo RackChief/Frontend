@@ -13,7 +13,6 @@
     "@nuxt/icon": "latest",
     "@nuxt/image": "latest",
     "@nuxt/ui": "latest",
-    "@supabase/supabase-js": "^2.117.2",
     "nuxt": "^4",
     "tailwindcss": "^4.3.3"
   },

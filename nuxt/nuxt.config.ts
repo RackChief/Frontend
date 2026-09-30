@@ -15,13 +15,13 @@ export default defineNuxtConfig({
   runtimeConfig: {
     backendUrl: 'http://localhost:3000',
     public: {
-      supabaseUrl: '',
-      supabasePublishableKey: '',
       apiBase: '',
       appVersion: packageJson.version,
     },
   },
   routeRules: {
     '/api/v1/**': { proxy: `${backend}/api/v1/**` },
+    '/api/auth/**': { proxy: `${backend}/api/auth/**` },
+    '/mcp': { proxy: `${backend}/mcp` },
   },
 })

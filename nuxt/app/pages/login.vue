@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { client, signIn } = useAuth()
+const { signIn } = useAuth()
 const email = ref('')
 const password = ref('')
 const busy = ref(false)
@@ -17,10 +17,9 @@ async function submit() {
   <main class="login"><UCard class="login-card"><form class="login-form" @submit.prevent="submit">
     <NuxtImg src="/rackchief-horizontal.png" width="320" height="107" alt="RackChief" class="login-logo" />
     <h1 class="sr-only">RackChief</h1><p>Sign in to manage your lab.</p>
-    <UAlert v-if="!client" color="error" title="Set NUXT_PUBLIC_SUPABASE_URL and NUXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY to enable login." />
     <UAlert v-if="error" color="error" :title="error" />
     <UFormField label="Email" required><UInput v-model="email" type="email" autocomplete="username" required class="w-full" /></UFormField>
     <UFormField label="Password" required><UInput v-model="password" type="password" autocomplete="current-password" required class="w-full" /></UFormField>
-    <UButton type="submit" :loading="busy" :disabled="!client" block>Sign in</UButton>
+    <UButton type="submit" :loading="busy" block>Sign in</UButton>
   </form></UCard></main>
 </template>
